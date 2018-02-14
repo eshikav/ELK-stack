@@ -1,0 +1,40 @@
+- name: Importing the GPG keys
+  shell: "rpm --import http://packages.elastic.co/GPG-KEY-elasticsearch"
+
+- name: Installing packages for the elasticsearch service
+  yum: name="{{ item }}" state=installed
+  with_items:
+     - java-1.8.0-openjdk.x86_64
+     - elasticsearch
+     - logstash
+     - kibana
+     - httpd
+ 
+- name: Starting the httpd service for exposing the ssl certificate
+  service: name=httpd state=started enabled=true
+
+- name: Configuring the logstash service to use ssl 
+  template: src="openssl.cnf" dest="/etc/pki/tls/openssl.cnf"
+
+- name: Generating the ssl certificates for the ssl connection
+  shell: openssl req -config /etc/pki/tls/openssl.cnf -x509 -days 3650 -batch -nodes -newkey rsa:2048 -keyout private/logstash-forwarder.key -out certs/logstash-forwarder.crt
+  args:
+     chdir: /etc/pki/tls
+     creates: /etc/pki/tls/certs/logstash-forwarder.crt
+
+- name: Copying the certificate to the webserver for download
+  copy: src="/etc/pki/tls/certs/logstash-forwarder.crt" dest=/var/www/html/ remote_src=yes
+
+- name: Configuring the logstash plugins
+  copy: src="{{ item }}" dest=/etc/logstash/conf.d/{{ item }}
+  with_items:
+     - input.conf
+     - filter.conf
+     - output.conf
+
+- name: Starting the ELK stack services
+  service: name={{ item }} state=started state=started enabled=true
+  with_items:
+     - elasticsearch
+     - kibana
+     - logstash

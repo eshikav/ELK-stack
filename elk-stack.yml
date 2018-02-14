@@ -1,0 +1,9 @@
+- hosts: elkserver
+  roles:
+    - { role: prereq,tags: elk-stack }
+    - { role: elk-stack,tags: elk-stack }
+
+- hosts: filebeat
+  roles:
+    - { role: prereq,tags: filebeat }
+    - { role: filebeat,tags: filebeat }

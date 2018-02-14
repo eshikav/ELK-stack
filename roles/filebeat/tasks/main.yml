@@ -1,0 +1,11 @@
+- name: Installing the filebeat service
+  yum: name=filebeat state=installed
+
+- name: Configuring the filebeat to use the ssl connection
+  get_url: url=http://{{ groups['elkserver'][0] }}/logstash-forwarder.crt dest=/etc/pki/tls/certs/
+
+- name: Configuring the filebeat to push to the logstash server
+  template: src=filebeat.j2 dest=/etc/filebeat/filebeat.yml
+
+- name: starting the filebeat service
+  service: name=filebeat state=started enabled=true
