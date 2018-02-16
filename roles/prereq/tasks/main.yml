@@ -1,3 +1,6 @@
+- name: Setting the hostname
+  hostname: name="{{ hostname }}"
+
 - name: Disabling the SELINUX on all the nodes
   selinux: state=disabled
   when: inventory_hostname in groups['elkserver']
